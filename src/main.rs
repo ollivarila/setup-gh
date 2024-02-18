@@ -88,6 +88,8 @@ impl SetupGh {
 
         self.bar.set_message("Pushing to remote");
         git_push_upstream(branch_name)?;
+
+        self.bar.finish_and_clear();
         Ok(())
     }
 
