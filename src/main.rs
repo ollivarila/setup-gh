@@ -125,7 +125,11 @@ where
 
 fn is_github_origin(origin: &str) -> bool {
     let r = Regex::new(r"git@github.com:[A-z\d-]+\/[A-z\d-]+.git").unwrap();
-    r.is_match(origin)
+    let Some(cap) = r.captures(origin) else {
+        return false;
+    };
+    let cap = cap.get(0).unwrap();
+    cap.as_str() == origin
 }
 
 #[cfg(test)]
@@ -140,6 +144,9 @@ mod tests {
         assert!(res);
         let origin = "not-real";
         let res = is_github_origin(origin);
-        assert!(res == false)
+        assert!(res == false);
+        let origin = "asdfgit@github.com:test-account-123/test-repo-123.gitasdf";
+        let res = is_github_origin(origin);
+        assert!(res == false);
     }
 }
