@@ -14,10 +14,8 @@ git push -u origin main
 
 ## Installation
 
-Clone the repo and run:
-
 ```sh
-cargo install --path .
+cargo install --git https://github.com/ollivarila/setup-gh.git
 ```
 
 ## Usage
