@@ -13,7 +13,7 @@ macro_rules! git {
 pub fn git<const N: usize>(args: [&str; N]) -> anyhow::Result<()> {
     let sub_cmd = args[0].to_string();
 
-    let out = Command::new("git").args(args.clone()).output()?;
+    let out = Command::new("git").args(args).output()?;
 
     if !out.status.success() {
         let errors = String::from_utf8(out.stderr)?;

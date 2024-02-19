@@ -112,7 +112,7 @@ mod error {
 
     #[derive(Debug, Error)]
     pub enum SetupError {
-        #[error("Failed during git {0} Reason: {1}")]
+        #[error("Failed during: git {0} Reason: {1}")]
         CommandFailed(String, String),
         #[error("Invalid origin: {0}")]
         InvalidOrigin(String),
