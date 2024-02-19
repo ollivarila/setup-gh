@@ -1,43 +1,23 @@
+use crate::{err, error::SetupError};
+use anyhow::anyhow;
+use regex::Regex;
 use std::process::Command;
 
-use anyhow::{anyhow, Result};
-use regex::Regex;
-
-use crate::SetupError;
-
-pub fn git_add(files: &str) -> Result<()> {
-    git(["add", files])
+#[macro_export]
+macro_rules! git {
+    ($($args:expr),*) => {
+        git([$($args),*])
+    };
 }
 
-pub fn git_commit(msg: &str) -> Result<()> {
-    git(["commit", "-m", &msg])
-}
+pub fn git<const N: usize>(args: [&str; N]) -> anyhow::Result<()> {
+    let sub_cmd = args[0].to_string();
 
-pub fn rename_master_to_main() -> Result<()> {
-    git(["branch", "-M", "main"])
-}
-
-pub fn git_remote_add_origin(origin: &str) -> Result<()> {
-    git(["remote", "add", "origin", origin])
-}
-
-pub fn git_push_upstream(branch_name: &str) -> Result<()> {
-    git(["push", "-u", "origin", branch_name])
-}
-
-fn git<I, S>(args: I) -> anyhow::Result<()>
-where
-    I: IntoIterator<Item = S> + Clone,
-    S: AsRef<std::ffi::OsStr>,
-{
     let out = Command::new("git").args(args.clone()).output()?;
 
     if !out.status.success() {
         let errors = String::from_utf8(out.stderr)?;
-        let sub_cmd = args.into_iter().next().unwrap();
-        let sub_cmd = sub_cmd.as_ref().to_str().unwrap().to_string();
-
-        Err(anyhow!(SetupError::CommandFailed(sub_cmd, errors)))
+        err!(SetupError::CommandFailed(sub_cmd, errors))
     } else {
         Ok(())
     }

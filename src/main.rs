@@ -1,10 +1,12 @@
 use anyhow::{anyhow, Result};
-use clap::{arg, Parser};
+use clap::Parser;
 use indicatif::ProgressBar;
 use std::time::Duration;
 
 mod git_commands;
 use git_commands::*;
+
+use crate::error::SetupError;
 
 #[derive(Parser, Debug)]
 #[command(version, about)]
@@ -67,27 +69,27 @@ impl SetupGh {
             let is_valid_origin = is_github_origin(&args.origin);
 
             if !is_valid_origin {
-                return Err(anyhow!(SetupError::InvalidOrigin(args.origin.clone())));
+                return err!(SetupError::InvalidOrigin(self.args.origin.clone()));
             }
         }
 
         self.bar.set_message("Committing file(s)");
-        git_add(&args.pathspec)?;
+        git!("add", &args.pathspec)?;
 
-        git_commit(&args.commit_message)?;
+        git!("commit", "-m", &args.commit_message)?;
 
         if !args.master {
             self.bar.set_message("Renaming default branch");
-            rename_master_to_main()?;
+            git!("branch", "-M", "main")?;
         }
 
         self.bar.set_message("Setting up origin");
-        git_remote_add_origin(&args.origin)?;
+        git!("remote", "add", "origin", &args.origin)?;
 
         let branch_name = if args.master { "master" } else { "main" };
 
         self.bar.set_message("Pushing to remote");
-        git_push_upstream(branch_name)?;
+        git!("push", "-u", "origin", branch_name)?;
 
         self.bar.finish_and_clear();
         Ok(())
@@ -98,19 +100,21 @@ impl SetupGh {
     }
 }
 
-#[derive(Debug)]
-enum SetupError {
-    CommandFailed(String, String),
-    InvalidOrigin(String),
-}
+mod error {
+    use thiserror::Error;
 
-impl std::fmt::Display for SetupError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::CommandFailed(sub_cmd, reason) => {
-                write!(f, "Failed during: git {sub_cmd}, Reason: {reason}")
-            }
-            Self::InvalidOrigin(origin) => write!(f, "Invalid origin: {origin}"),
-        }
+    #[macro_export]
+    macro_rules! err {
+        ($e:expr) => {
+            Err(anyhow!($e))
+        };
+    }
+
+    #[derive(Debug, Error)]
+    pub enum SetupError {
+        #[error("Failed during git {0} Reason: {1}")]
+        CommandFailed(String, String),
+        #[error("Invalid origin: {0}")]
+        InvalidOrigin(String),
     }
 }
